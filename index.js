@@ -2,6 +2,7 @@ import express, { urlencoded } from 'express'
 import dotenv from 'dotenv'
 import cookieParser from 'cookie-parser';
 import cors from "cors"
+import userRouter from './routes/auth.route.js';
 
 
 dotenv.config()
@@ -25,6 +26,8 @@ app.get("/test",(req,res)=>{
         message:"I am working"
     })
 })
+
+app.use('/api/v1/users',userRouter);
 
 app.listen(port,()=>{
     console.log(`Backend is listening on the post : ${port}`)

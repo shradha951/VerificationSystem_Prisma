@@ -1,0 +1,1 @@
+# This Project is the replica of the fullstckproject repo where i build a verification system, but here i have implemeted this project with Prisma and neondb

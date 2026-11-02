@@ -8,3 +8,11 @@ build/
 coverage/
 
 .DS_Store
+/src/generated/prisma
+
+
+# Prisma AI Agent Skills
+.agents/
+.claude/
+.windsurf/
+skills-lock.json

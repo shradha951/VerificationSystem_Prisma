@@ -1,15 +1,22 @@
+# Dependencies
 node_modules/
+
+# Environment variables
 .env
 .env.*
 !.env.example
 
+# Build and test output
 dist/
 build/
 coverage/
 
+# OS files
 .DS_Store
-/src/generated/prisma
 
+# Prisma generated client
+/src/generated/prisma/
+/generated/prisma/
 
 # Prisma AI Agent Skills
 .agents/

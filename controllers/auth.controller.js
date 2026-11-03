@@ -1,9 +1,4 @@
-// import { PrismaClient } from "@prisma/client/extension";
-
-
-// const prisma=new PrismaClient();
-
-
+import {prisma}from '../lib/prisma.js'
 
 export const isValidPassword = (password) => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=])[A-Za-z\d@$!%*?&#^()_+\-=]{8,}$/;
@@ -36,12 +31,34 @@ export const registerUser=async (req,res)=>{
         })
     }
 
+    try {
+      const user=  await prisma.user.findUnique({
+        where:{email}
+      })
+
+      console.log(user)
+
+      if(user){
+        return res.status(400).json({
+            success:false,
+            messages:"User already exist"
+        })
+      }
+
+      //creating a user in the database
+      
+
+
+    } catch (error) {
+        
+    }
+
     
 
   
 
 
-    
+
 
 
 

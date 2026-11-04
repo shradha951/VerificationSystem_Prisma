@@ -6,6 +6,8 @@ import crypto from "crypto"
 
 
 
+
+
 export const isValidPassword = (password) => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=])[A-Za-z\d@$!%*?&#^()_+\-=]{8,}$/;
 
@@ -17,6 +19,36 @@ export const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 };
+
+
+const  generateTokenAndSave=async(userid)=>{
+    const token=await crypto.randomBytes(32).toString("hex")
+
+    try {
+
+       const updatedUser= await prisma.user.update({
+        where:{
+            id:userid
+        },
+        data:{
+        verificationToken:token
+        }
+
+    })
+    console.log("UpdatedUser: "+updatedUser)
+    return token;
+        
+    } catch (error) {
+        console.log("Token saving failed:", error);
+        return null;
+    }
+    
+}
+
+const hashPassword= async(password)=>{
+    const hash= await bcrypt.hash(password,10);
+    return hash;
+}
 
 export const registerUser=async (req,res)=>{
     let messages=[];
@@ -45,6 +77,7 @@ export const registerUser=async (req,res)=>{
       console.log(user)
 
       if(user){
+        //code to be continued
         return res.status(400).json({
             success:false,
             messages:"User already exist",
@@ -54,6 +87,7 @@ export const registerUser=async (req,res)=>{
 
       //hashing the password
       const hashedPassword= await bcrypt.hash(password,10)
+      
 
       //creating a user in the database
       const resp= await prisma.user.create({
@@ -65,10 +99,33 @@ export const registerUser=async (req,res)=>{
         }
       })
 
+
+      if(!resp){
+        return res.status(400).json({
+            success:false,
+            messages:"User cannot be registered"
+        })
+      }
+      
+      const token= await generateTokenAndSave(resp.id);
+
+      if(!token){
+        return res.status(500).json({
+        success: false,
+        message: "Unable to generate verification token./Email unsend"
+    });
+      }
+
+      
+
+
+
       return res.status(201).json({
         success:true,
         messages:"User created successfully",
-        user:resp
+        token:token,
+        hashedPassword,
+        resp
       })
 
 

@@ -1,6 +1,7 @@
 import {prisma}from '../lib/prisma.js'
 import bcrypt from 'bcryptjs';
 import crypto from "crypto"
+import nodemailer from 'nodemailer';
 
 
 
@@ -48,6 +49,36 @@ const  generateTokenAndSave=async(userid)=>{
 const hashPassword= async(password)=>{
     const hash= await bcrypt.hash(password,10);
     return hash;
+}
+
+
+const sendemail= async(email,token)=>{
+    const transporter=nodemailer.createTransport({
+        host:process.env.MAILTRAP_HOST,
+        port:process.env.MAILTRAP_PORT,
+        secure:false,
+        auth:{
+            user:process.env.MAILTRAP_USER,
+            pass:process.env.MAILTRAP_PASSWORD
+        }
+
+    })
+
+    const mailOptions={
+        from:process.env.MAILTRAP_SENDEREMAIL,
+        to:email,
+        subject:"Verify Your Email",
+        text:`please click on the following link:${process.env.BASE_URL}/api/v1/users/verify/${token}`
+    }
+
+    try {
+        await transporter.sendMail(mailOptions)
+        return true
+    } catch (error) {
+        console.log("Sending Email Failed",error)
+        return false;
+    }
+
 }
 
 export const registerUser=async (req,res)=>{
@@ -116,15 +147,22 @@ export const registerUser=async (req,res)=>{
     });
       }
 
-      
+       const emailSend= await sendemail(resp.email,token)
 
+       if(!emailSend){
+
+        return res.status(500).json({
+        success: false,
+        message: "Unable to Send verification email"
+    });
+        
+       }
 
 
       return res.status(201).json({
         success:true,
-        messages:"User created successfully",
+        messages:"User created successfully and Verification email send Succesfully",
         token:token,
-        hashedPassword,
         resp
       })
 

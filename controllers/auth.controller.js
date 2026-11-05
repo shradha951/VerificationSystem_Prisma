@@ -82,7 +82,6 @@ const sendemail= async(email,token)=>{
 }
 
 export const registerUser=async (req,res)=>{
-    let messages=[];
 
     const {name,email,password,phone}=req.body || {};
 
@@ -108,12 +107,68 @@ export const registerUser=async (req,res)=>{
       console.log(user)
 
       if(user){
-        //code to be continued
-        return res.status(400).json({
+        //code to be continued for existing User
+        try {
+
+
+             if(user.isVerified){
+            return res.status(400).json({
             success:false,
-            messages:"User already exist",
+            message:"User already exist",
             user
         })
+        }
+
+
+        if(user.verificationToken){
+            const sendEmail=await sendemail(user.email,user.verificationToken);
+
+            if(!sendEmail){
+                return res.status(400).json({
+                    success:false,
+                    message:"User already exist but not verified",
+                    error:"email cannot be send"
+                })
+            }
+
+            return res.status(400).json({
+                success:true,
+                message:"User already exist but not verified. Verification email has been send "
+            })
+        }
+
+        const newToken= await generateTokenAndSave(user.id)
+
+        if(!newToken){
+        return res.status(500).json({
+        success: false,
+        message: "User already Exist bit not verified.Unable to generate verification token./Email unsend"
+    });
+      }
+
+      const sendEmail=await sendemail(user.email,newToken);
+
+       if(!sendEmail){
+                return res.status(400).json({
+                    success:false,
+                    message:"User already exist but not verified",
+                    error:"email cannot be send"
+                })
+            }
+
+            return res.status(200).json({
+                success:true,
+                message:"User already exist bot not verified check your email to verify yorself"
+            })
+            
+        } catch (error) {
+            return res.status(400).json({
+                success:false,
+                message:"User already exist but not verified",
+                errormessage:"Troubble in verifying the User",
+                error
+            })
+        }
       }
 
       //hashing the password

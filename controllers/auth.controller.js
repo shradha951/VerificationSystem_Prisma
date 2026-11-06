@@ -32,7 +32,8 @@ const  generateTokenAndSave=async(userid)=>{
             id:userid
         },
         data:{
-        verificationToken:token
+        verificationToken:token,
+        verificationTokenExpires:new Date(Date.now()+10*60*1000)
         }
 
     })
@@ -121,6 +122,27 @@ export const registerUser=async (req,res)=>{
 
 
         if(user.verificationToken){
+
+            //if user has verification token but the token is expires then again generate the token and countnue with the mail process
+            const isTokenExpired= !user.verificationTokenExpires || new Date(user.verificationTokenExpires)<=new Date();
+
+            if(isTokenExpired){
+                const newToken=await generateTokenAndSave(user.id)
+
+                if(!newToken){
+        return res.status(500).json({
+        success: false,
+        message: "User already Exist bit not verified.Unable to generate verification token./Email unsend"
+    });
+      }
+      user.verificationToken=newToken
+}
+
+            
+
+
+
+
             const sendEmail=await sendemail(user.email,user.verificationToken);
 
             if(!sendEmail){
@@ -239,6 +261,16 @@ export const registerUser=async (req,res)=>{
 
 
 
+
+
+}
+
+
+export const verifyUser=async (req,res)=>{
+
+    res.status(200).json({
+        message:"hello from verify"
+    })
 
 
 }

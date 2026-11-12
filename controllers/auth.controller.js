@@ -268,9 +268,82 @@ export const registerUser=async (req,res)=>{
 
 export const verifyUser=async (req,res)=>{
 
-    res.status(200).json({
-        message:"hello from verify"
+    const {token}=req.params;
+
+    if(!token){
+        return res.status(400).json({
+            success:false,
+            message:"Invalid token or url"
+        })
+    }
+
+    try {
+
+        const user= await prisma.user.findUnique({
+        where:{token}
     })
 
+    if(!user){
+        return res.status(400).json({
+            success:false,
+            message:"Invalid token or url / no such user exist "
+        })
+    }
 
+    const isTokenexpired=!user.verificationToken ||new Date(user.verificationToken)<= new Date();
+
+    if(isTokenexpired){
+        const newToken=await generateTokenAndSave(user.id);
+
+        if(!newToken){
+            return res.status(400).json({
+                success:false,
+                message:"User cannot be verified / token expired / cannot generate new token"
+            })
+        }
+
+        const sendEmail=await sendemail(user.email,newToken);
+        if(!sendEmail){
+            return res.status(400).json({
+                success:"false",
+                message:"User cannot be verified",
+                error:"Veerification email cannot be send"
+            })
+        }
+
+        return res.status(400).json({
+            success:true,
+            message:"Token expired / a new verication email is send to your mail click to verify"
+        })
+
+    }
+
+    const updatedUser= await prisma.user.update({
+        where:{id:user.id},
+        data:{
+            isVerified:true,
+            verificationToken:null,
+            verificationTokenExpires:null
+        }
+    })
+
+    if(!updatedUser){
+        return res.status(500).json({
+            success:false,
+            message:"Error in verifying the user / DataBase problem"
+        })
+    }
+
+    return res.status(200).json({
+        success:false,
+        message:"User Verified succesfully"
+    })
+        
+    } catch (error) {
+        res.status(400).json({
+        success:false,
+        message:"User cannot be verified",
+        error:error
+    })
+    }
 }

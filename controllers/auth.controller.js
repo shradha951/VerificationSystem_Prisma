@@ -279,8 +279,8 @@ export const verifyUser=async (req,res)=>{
 
     try {
 
-        const user= await prisma.user.findUnique({
-        where:{token}
+        const user= await prisma.user.findFirst({
+        where:{verificationToken:token}
     })
 
     if(!user){
@@ -290,7 +290,7 @@ export const verifyUser=async (req,res)=>{
         })
     }
 
-    const isTokenexpired=!user.verificationToken ||new Date(user.verificationToken)<= new Date();
+    const isTokenexpired=!user.verificationTokenExpires || new Date(user.verificationTokenExpires)<=new Date();
 
     if(isTokenexpired){
         const newToken=await generateTokenAndSave(user.id);
